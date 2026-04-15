@@ -99,6 +99,7 @@ class _LiveBACScreenState extends State<LiveBACScreen> {
         centerTitle: true,
         title: const Text("Live BAC",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [

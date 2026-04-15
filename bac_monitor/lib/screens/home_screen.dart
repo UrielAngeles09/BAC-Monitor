@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'live_bac_screen.dart';
 import 'history_screen.dart';
 
+import 'login_screen.dart';
+import 'package:bac_monitor/services/auth_service.dart';
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final AuthService auth = AuthService();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.lightBlue,
@@ -16,20 +20,30 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.menu, color: Colors.white),
             onPressed: () {
+              final navigator = Navigator.of(context, rootNavigator: true); // close dialog
+
               showDialog(
                 context: context,
-                builder: (context) {
+                builder: (dialogContext) {
                   return AlertDialog(
                     title: const Text("Menu"),
                     content: const Text("Do you want to sign out?"),
                     actions: [
                       TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text("Cancel")),
+                          child: const Text("Cancel")
+                          ),
+
                       TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.popUntil(context, (route) => route.isFirst);
+                       onPressed: () async {
+                        Navigator.of(dialogContext).pop();
+                          
+                          await auth.signOut(); // 
+
+                          navigator.pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            (route) => false,
+                          );
                         },
                         child: const Text("Sign Out"),
                       ),
@@ -86,3 +100,5 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
+
+
