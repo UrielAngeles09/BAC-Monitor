@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'live_bac_screen.dart';
 import 'history_screen.dart';
-
 import 'login_screen.dart';
 import 'package:bac_monitor/services/auth_service.dart';
 
@@ -15,13 +14,10 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.lightBlue,
         elevation: 0,
-
         actions: [
           IconButton(
             icon: const Icon(Icons.menu, color: Colors.white),
             onPressed: () {
-              final navigator = Navigator.of(context, rootNavigator: true); // close dialog
-
               showDialog(
                 context: context,
                 builder: (dialogContext) {
@@ -30,20 +26,33 @@ class HomeScreen extends StatelessWidget {
                     content: const Text("Do you want to sign out?"),
                     actions: [
                       TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text("Cancel")
-                          ),
-
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text("Cancel"),
+                      ),
                       TextButton(
-                       onPressed: () async {
-                        Navigator.of(dialogContext).pop();
-                          
-                          await auth.signOut(); // 
+                        onPressed: () async {
+                          final navigator = Navigator.of(context);
 
-                          navigator.pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
-                            (route) => false,
+                          Navigator.pop(dialogContext);
+
+                          print("=== SIGN OUT STARTED ===");
+
+                          try {
+                            await auth.signOut();
+                            print("=== SIGN OUT SUCCESS ===");
+                          } catch (e) {
+                            print("=== SIGN OUT ERROR: $e ===");
+                          }
+
+                          print("=== NAVIGATING TO LOGIN ===");
+
+                          navigator.pushReplacement(
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
                           );
+
+                          print("=== NAVIGATION CALLED ===");
                         },
                         child: const Text("Sign Out"),
                       ),
@@ -52,11 +61,9 @@ class HomeScreen extends StatelessWidget {
                 },
               );
             },
-          )
+          ),
         ],
       ),
-
-      
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -69,7 +76,7 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const LiveBACScreen()),
+                  MaterialPageRoute(builder: (_) => const LiveBACScreen()),
                 );
               },
               child: const Text(
@@ -86,7 +93,7 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const HistoryScreen()),
+                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
                 );
               },
               child: const Text(
@@ -100,5 +107,3 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
-
