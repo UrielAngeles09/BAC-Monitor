@@ -58,7 +58,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
             // 🔹 App Title
             const Text(
-              "BAC Tracker",
+              "BAC Monitor",
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 32,

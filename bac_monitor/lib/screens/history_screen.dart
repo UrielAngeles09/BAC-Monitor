@@ -1,111 +1,62 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:bac_monitor/services/database_service.dart'; 
 
-class HistoryScreen extends StatefulWidget {
+class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
-}
-
-class _HistoryScreenState extends State<HistoryScreen> {
-  List<Map<String, String>> history = [];
-  List<Map<String, String>> filteredHistory = [];
-
-  @override
-  void initState() {
-    super.initState();
-    loadHistory();
-  }
-
-  /// Loads history from SharedPreferences.
-  /// If empty, store and load two default demo readings.
-  Future<void> loadHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? storedData = prefs.getString("bac_history");
-
-  List<Map<String, String>> demo = [
-      {
-        "date": "Nov 7, 2025",
-        "time": "04:55 pm",
-        "bac": "10%",
-      },
-      {
-        "date": "Sep 8, 2025",
-        "time": "06:05 pm",
-        "bac": "6%",
-      },
-    ];
-
-  
-
-    // Save updated list
-    await prefs.setString("bac_history", jsonEncode(history));
-    history = demo;
-
-    setState(() {
-      filteredHistory = history;
-    });
-  }
-
-  /// Filter search results
-  void searchHistory(String query) {
-    query = query.toLowerCase();
-
-    setState(() {
-      filteredHistory = history.where((item) {
-        return item["date"]!.toLowerCase().contains(query) ||
-            item["time"]!.toLowerCase().contains(query) ||
-            item["bac"]!.toLowerCase().contains(query);
-      }).toList();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final DatabaseService db = DatabaseService();
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.lightBlue,
         centerTitle: true,
-        title: const Text("History", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "History",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
-
       ),
       body: Column(
         children: [
-          // SEARCH BAR
-          Container(
-            padding: const EdgeInsets.all(10),
-            color: Colors.grey.shade200,
-            child: TextField(
-              onChanged: searchHistory,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: "Search by date or BAC %",
-                border: OutlineInputBorder(),
-                filled: true,
-              ),
-            ),
-          ),
-
-          // HISTORY LIST
           Expanded(
-            child: filteredHistory.isEmpty
-                ? const Center(
-                    child: Text("No results found"),
-                  )
-                : ListView.builder(
-                    itemCount: filteredHistory.length,
-                    itemBuilder: (context, index) {
-                      final item = filteredHistory[index];
-                      return HistoryItem(
-                        date: item["date"]!,
-                        time: item["time"]!,
-                        bac: item["bac"]!,
-                      );
-                    },
-                  ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: db.getReadings(), //
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text("No data yet"));
+                }
+
+                final readings = snapshot.data!.docs;
+
+                return ListView.builder(
+                  itemCount: readings.length,
+                  itemBuilder: (context, index) {
+                    final data = readings[index];
+
+                    final timestamp =
+                        (data["timestamp"] as Timestamp?)?.toDate();
+
+                    return HistoryItem(
+                      date: timestamp != null
+                          ? "${timestamp.month}/${timestamp.day}/${timestamp.year}"
+                          : "No date",
+                      time: timestamp != null
+                          ? "${timestamp.hour}:${timestamp.minute}"
+                          : "No time",
+                      bac:
+                          "${(data["bac"] * 100).toStringAsFixed(2)}%", // 
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -134,7 +85,10 @@ class HistoryItem extends StatelessWidget {
       trailing: Text(
         "BAC: $bac",
         style: const TextStyle(
-            color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+          color: Colors.red,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
       ),
     );
   }

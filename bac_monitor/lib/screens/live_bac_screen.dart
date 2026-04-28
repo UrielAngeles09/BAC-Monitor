@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:bac_monitor/services/database_service.dart';
+
+
 
 class LiveBACScreen extends StatefulWidget {
   const LiveBACScreen({super.key});
@@ -15,6 +18,8 @@ class _LiveBACScreenState extends State<LiveBACScreen> {
   double tac = 0.0;
   double temp = 0.0;
   double humidity = 0.0;
+  DateTime lastSaved = DateTime.now();
+  final DatabaseService db = DatabaseService();
 
   final Guid serviceUuid = Guid("12345678-1234-1234-1234-1234567890ab");
   final Guid characteristicUuid = Guid("abcd1234-5678-1234-5678-abcdef123456");
@@ -72,6 +77,20 @@ class _LiveBACScreenState extends State<LiveBACScreen> {
                     tac = (data["current"] ?? 0).toDouble();
                     bac = tac * 20;
                   });
+
+                      // SAVE TO FIRESTORE
+                  if (DateTime.now().difference(lastSaved).inSeconds > 10) { // ✅ ADDED
+                    db.saveReading(
+                      bac: bac,
+                      tac: tac,
+                      temp: temp,
+                      humidity: humidity,
+                    );
+
+                    lastSaved = DateTime.now();
+                  }
+
+
                 } catch (e) {
                   debugPrint("JSON Error: $e");
                 }
